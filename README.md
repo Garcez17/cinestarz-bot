@@ -3,11 +3,7 @@
 </h1>
 
 <p align="center">
-  <img alt="Portfolio - Gabriel Garcez" src=".github/portfolio_home.png" width="100%">
-</p>
-
-<p align="center">
-  <a href="https://portfolio-garcez17.vercel.app/">Acessar site</a>
+  <img alt="Portfolio - Gabriel Garcez" src=".github/cinestarz.png" width="100%">
 </p>
 
 ## Sobre o Projeto
