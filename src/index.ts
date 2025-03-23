@@ -1,11 +1,10 @@
-import Discord from 'discord.js';
-import 'dotenv/config';
+import { Client, GatewayIntentBits } from "discord.js";
 
-import disbut from 'discord-buttons';
+import 'dotenv/config';
 
 import { startSession } from './commands/start';
 import { indicate } from './commands/indicate';
-import { changeFilm } from './commands/changeFilm';
+// import { changeFilm } from './commands/changeFilm';
 import { raffle } from './commands/raffle';
 import { list } from './commands/list';
 import { clear } from './commands/clear';
@@ -19,20 +18,25 @@ import { award } from './commands/award';
 import { awardMessage } from './commands/stzaward/awardMessage';
 import { awardVote } from './commands/stzaward/awardVote';
 
-const client = new Discord.Client();
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds, // Permite interagir com servidores
+    GatewayIntentBits.GuildMessages, // Permite ler mensagens enviadas em canais de servidores
+    GatewayIntentBits.MessageContent // Permite acessar o conteúdo das mensagens (precisa ser ativado no painel)
+  ]
+});
 
 client.login(process.env.DISCORD_TOKEN);
 
-disbut(client);
-
 client.on('ready', () => console.log("Client started!"));
 
-client.on('message', async msg => {
+client.on('messageCreate', async msg => {
+  console.log('message', msg)
   if (msg.content === '!start') await startSession(msg);
 
   if (msg.content.startsWith('!indica')) await indicate(msg);
 
-  if (msg.content.startsWith('!mudarfilme')) await changeFilm(msg);
+  // if (msg.content.startsWith('!mudarfilme')) await changeFilm(msg);
 
   if (msg.content === '!sorteio') await raffle(msg);
 
@@ -58,3 +62,4 @@ client.on('message', async msg => {
   
   if (msg.content.startsWith('!votar')) await awardVote(msg);
 });
+

@@ -3,7 +3,6 @@ import { query as q } from 'faunadb';
 
 import { noSession } from "../errors/NoSession";
 import { api } from "../services/api";
-import { translateAzureApi } from "../services/translateAzure";
 import { trattedRuntime } from "../services/trattedRuntime";
 import { hasSession } from "../utils/hasSession";
 
@@ -82,7 +81,7 @@ export async function raffle(msg: Message) {
           },
           {
             name: "Gênero:",
-            value: app.data.Genre === 'N/A' ? 'Sem dados' : await translateAzureApi(app.data.Genre),
+            value: app.data.Genre === 'N/A' ? 'Sem dados' : app.data.Genre,
           },
           {
             name: "Diretor:",
@@ -94,7 +93,7 @@ export async function raffle(msg: Message) {
           },
           {
             name: "Sinopse:",
-            value: app.data.Plot === 'N/A' ? 'Num tem sinopse parsero kkjk' : await translateAzureApi(app.data.Plot),
+            value: app.data.Plot === 'N/A' ? 'Num tem sinopse parsero kkjk' : app.data.Plot,
           },
           {
             name: "Duração:",
