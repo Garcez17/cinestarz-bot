@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@types/node": "^16.18.126",
+    "@types/socket.io": "^3.0.2",
     "@types/uuid": "^8.3.4",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^1.1.8",
@@ -24,6 +25,7 @@
     "dotenv": "^10.0.0",
     "faunadb": "^4.8.2",
     "googleapis": "^67.1.1",
+    "socket.io": "^4.8.1",
     "translate": "^1.4.1",
     "uuid": "^8.3.2"
   }

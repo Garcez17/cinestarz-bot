@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits } from "discord.js";
-
+import { Server } from 'socket.io'
 import 'dotenv/config';
 
 import { startSession } from './commands/start';
@@ -61,5 +61,25 @@ client.on('messageCreate', async msg => {
   if (msg.content === '!sendAwardMessage') awardMessage(client);
   
   if (msg.content.startsWith('!votar')) await awardVote(msg);
-});
+})
+
+
+const io = new Server(8080, {
+  cors: { origin: "*" }
+})
+
+io.on('connection', socket => {
+  console.log('connection =>', socket.id)
+  socket.join('players')
+  socket.on('pause', () => {
+    console.log('pause!!')
+
+    io.to('players').emit('pause_test')
+  })
+
+  socket.on('req_play', () => {
+    console.log('play')
+    io.to('players').emit('play')
+  })
+})
 
