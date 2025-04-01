@@ -79,7 +79,7 @@ io.on('connection', socket => {
 
   socket.on('req_play', () => {
     console.log('play')
-    io.to('players').emit('play')
+    socket.broadcast.to('players').emit('play')
   })
 
   socket.on('info_manual_seek', (data) => {
