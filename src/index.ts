@@ -74,12 +74,24 @@ io.on('connection', socket => {
   socket.on('pause', () => {
     console.log('pause!!')
 
-    io.to('players').emit('pause_test')
+    socket.broadcast.to('players').emit('pause_test')
   })
 
   socket.on('req_play', () => {
     console.log('play')
     io.to('players').emit('play')
   })
+
+  socket.on('info_manual_seek', (data) => {
+    console.log('manual_seek ==>', data)
+
+    socket.broadcast.to('players').emit('manual_seek', {
+      currentTime: data.currentTime,
+    })
+  })
+
+  // socket.on('info_user_current_time', (data) => {
+  //   console.log('user_current_time ==>', data)
+  // })
 })
 
