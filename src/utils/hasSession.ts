@@ -6,7 +6,7 @@ import { embedMessage } from './EmbedMessage';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { firestore } from '../services/firebase';
 
-export async function hasSession({ guild, channel }: Message): Promise<boolean> {
+export async function hasSession({ guild, channel }: Message): Promise<Session | null> {
   const guildId = guild!.id
   const channelId = channel.id
   const sessionsRef = collection(firestore, `guilds/${guildId}/sessions`)
@@ -20,12 +20,12 @@ export async function hasSession({ guild, channel }: Message): Promise<boolean> 
   const snapshot = await getDocs(q)
 
   if (snapshot.empty) {
-    return false
+    return null
   }
 
-  const session = snapshot.docs[0]?.data()
+  const session = snapshot.docs[0]?.data() as Session
 
-  return Boolean(session)
+  return session
   // try {
   //   const sessionFauna = await fauna.query<FindOneSession>(
   //     q.Let(

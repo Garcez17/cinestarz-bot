@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, Events, GatewayIntentBits, MessageFlags, Partials } from "discord.js";
 import { Server } from 'socket.io'
 import 'dotenv/config';
 
@@ -20,18 +20,79 @@ import { awardVote } from './commands/stzaward/awardVote';
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.Guilds, // Permite interagir com servidores
-    GatewayIntentBits.GuildMessages, // Permite ler mensagens enviadas em canais de servidores
-    GatewayIntentBits.MessageContent // Permite acessar o conteúdo das mensagens (precisa ser ativado no painel)
-  ]
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates  
+  ],
+  partials: [Partials.Channel],
 });
 
 client.login(process.env.DISCORD_TOKEN);
 
 client.on('ready', () => console.log("Client started!"));
 
-client.on('messageCreate', async msg => {
-  console.log('message', msg)
+const TARGET_CHANNEL_ID = '877237861638869076'
+
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+  const member = newState.member
+
+  if (!member) return
+
+  if (!oldState.channel && newState.channel?.id === TARGET_CHANNEL_ID) {
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`join_party_${member.id}`)
+        .setLabel('Entrar na party 🎉')
+        .setStyle(ButtonStyle.Primary)
+    )
+
+    const channel = newState.guild.channels.cache.get(TARGET_CHANNEL_ID)
+    if (channel?.isTextBased()) {
+      await channel.send({
+        content: `<@${member.id}>, você entrou na call! Deseja entrar na party?`,
+        components: [row],
+      })
+
+      // setTimeout(() => msg.delete().catch(() => {}), 30000)
+    }
+  }
+})
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isButton()) return
+
+  const [action, expectedUserId] = interaction.customId.split('_party_')
+
+  if (action !== 'join') return
+
+  if (interaction.user.id !== expectedUserId) {
+    return interaction.reply({
+      content: '❌ Essa interação não é pra você!',
+      flags: MessageFlags.Ephemeral,
+    })
+  }
+
+  try {
+    await interaction.reply({
+      content: '🎉 Você entrou na party!',
+      flags: MessageFlags.Ephemeral,
+    })
+
+    await interaction.message.delete().catch(() => {})
+  } catch (err) {
+    console.error('Erro na interação do botão:', err)
+    if (!interaction.replied) {
+      await interaction.reply({
+        content: '⚠️ Ocorreu um erro ao processar.',
+        flags: MessageFlags.Ephemeral,
+      })
+    }
+  }
+})
+
+client.on(Events.MessageCreate, async msg => {
+  // console.log('message', msg)
   if (msg.content === '!start') await startSession(msg);
 
   if (msg.content.startsWith('!indica')) await indicate(msg);
@@ -56,11 +117,13 @@ client.on('messageCreate', async msg => {
 
   if (msg.content === '!stop') await stop(msg);
 
-  if (msg.content.startsWith('!premiostz')) await award(msg);
+  if (msg.content === '!stop') await stop(msg);
 
-  if (msg.content === '!sendAwardMessage') awardMessage(client);
+  // if (msg.content.startsWith('!premiostz')) await award(msg);
+
+  // if (msg.content === '!sendAwardMessage') awardMessage(client);
   
-  if (msg.content.startsWith('!votar')) await awardVote(msg);
+  // if (msg.content.startsWith('!votar')) await awardVote(msg);
 })
 
 
@@ -94,4 +157,3 @@ io.on('connection', socket => {
   //   console.log('user_current_time ==>', data)
   // })
 })
-

@@ -1,8 +1,4 @@
-import { format } from "date-fns";
-import { EmbedBuilder, Message, TextChannel, type OmitPartialGroupDMChannel } from "discord.js";
-import { fauna } from "../services/fauna";
-import { query as q } from 'faunadb';
-import { Session } from "../@types";
+import { EmbedBuilder, Message, type OmitPartialGroupDMChannel } from "discord.js";
 import { hasSession } from "../utils/hasSession";
 import { doc, setDoc } from "firebase/firestore";
 import { firestore } from "../services/firebase";
@@ -27,7 +23,12 @@ export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolea
     return
   }
 
+  const collectionName = msg.channel.id + randomUUID()
+
+  const document = doc(firestore, `guilds/${msg.guild!.id}/sessions/${collectionName}`)
+
   const session = {
+    collectionName,
     channelId: msg.channel.id,
     startedAt: new Date(),
     status: "VOTING",
@@ -44,8 +45,6 @@ export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolea
     movieSuggestions: [],
     votes: {}
   }
-
-  const document = doc(firestore, `guilds/${msg.guild!.id}/sessions/${msg.channel.id + randomUUID()}`)
 
   await setDoc(document, session)
 

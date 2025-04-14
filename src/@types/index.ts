@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export type Indication = {
   username: string;
   indicate: string;
@@ -27,11 +29,29 @@ type SessionData = {
   }
 }
 
-export type Session = {
-  ref: {
-    id: string;
-  };
-  data: SessionData;
+export type SessionStatus = "OPEN" | "VOTING" | "CLOSED";
+
+export interface Participant {
+  id: string;
+  username: string;
+  avatar: string;
+  nickname: string;
+}
+
+interface MovieSuggestion {
+  userId: string
+  filmName: string
+}
+
+export interface Session {
+  movie: string;
+  status: SessionStatus;
+  channelId: string;
+  collectionName: string;
+  createdBy: Participant;
+  participants: Participant[];
+  startedAt: Timestamp;
+  movieSuggestions: MovieSuggestion[]
 }
 
 export type FindOneSession = {
