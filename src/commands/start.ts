@@ -32,6 +32,7 @@ export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolea
     channelId: msg.channel.id,
     startedAt: new Date(),
     status: "VOTING",
+    movie: null,
     participants: [{
       id: msg.author.id,
       username: msg.author.username,

@@ -72,8 +72,7 @@ export async function indicate(msg: OmitPartialGroupDMChannel<Message<boolean>>)
     }],
   })
 
-  console.log('indicação feita')
-
+  embedMessage(`${msg.author?.displayName} indicou o filme: ${filmName}`, msg, 160000)
   // const user = await verifyRoom(msg);
 
   // if (!user)
