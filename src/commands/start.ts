@@ -1,15 +1,53 @@
 import { format } from "date-fns";
-import { EmbedBuilder, Message, TextChannel } from "discord.js";
+import { EmbedBuilder, Message, TextChannel, type OmitPartialGroupDMChannel } from "discord.js";
 import { fauna } from "../services/fauna";
 import { query as q } from 'faunadb';
 import { Session } from "../@types";
 import { hasSession } from "../utils/hasSession";
+import { doc, setDoc } from "firebase/firestore";
+import { firestore } from "../services/firebase";
+import { randomUUID } from "node:crypto";
 
-export async function startSession(msg: Message): Promise<void> {
-  const session = await hasSession(msg, true);
-  console.log('starting...')
+export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolean>>): Promise<void> {
+  const findExistentSession = await hasSession(msg)
 
-  if (session?.data.started_at) return;
+  const channel = msg.channel
+
+  if (findExistentSession) {
+    const embed = new EmbedBuilder()
+      .setColor(0x3498db)
+      .setTitle('🎬 Existe uma sessão em andamento, finalize essa para iniciar outra!')
+      .setTimestamp()
+
+    await channel.send({
+      embeds: [embed],
+      components: [],
+    })
+
+    return
+  }
+
+  const session = {
+    channelId: msg.channel.id,
+    startedAt: new Date(),
+    status: "VOTING",
+    participants: [{
+      id: msg.author.id,
+      username: msg.author.username,
+      avatar: `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png`,
+      nickname: msg.author?.displayName,
+    }],
+    createdBy: {
+      id: msg.author.id,
+      username: msg.author.username,
+    },
+    movieSuggestions: [],
+    votes: {}
+  }
+
+  const document = doc(firestore, `guilds/${msg.guild!.id}/sessions/${msg.channel.id + randomUUID()}`)
+
+  await setDoc(document, session)
 
   // const createSession = await fauna.query<Session>(
   //   q.If(
@@ -54,24 +92,42 @@ export async function startSession(msg: Message): Promise<void> {
 
   const date = new Date();
 
-  const channel = msg.channel
 
-  if (channel instanceof TextChannel) {
-    channel.send({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(3447003) // Cor no formato hexadecimal
-          .setTitle(`Cinestarz Sessão Nº 1 - ${format(date, "dd/MM")}`)
-          .setDescription("A sessão está iniciada!")
-          .addFields([
-            {
-              name: "15 minutos para indicarem!",
-              value: "Após isso as indicações são encerradas.",
-            },
-          ])
-          .setFooter({ text: "Bom filme! 😀" })
-          .setTimestamp()
-      ]
-    })
-  }
+  // if (channel instanceof TextChannel) {
+  //   channel.send({
+  //     embeds: [
+  //       new EmbedBuilder()
+  //         .setColor(0x3498db)
+  //         .setTitle("Criando usuário...")
+  //         .setDescription("A sessão está iniciada!")
+  //         .addFields([
+  //           {
+  //             name: "15 minutos para indicarem!",
+  //             value: "Após isso as indicações são encerradas.",
+  //           },
+  //         ])
+  //         .setFooter({ text: "Bom filme! 😀" })
+  //         .setTimestamp()
+  //     ]
+  //   })
+  // }
+
+  const embed = new EmbedBuilder()
+    .setColor(0x3498db) // azul bonito, pode mudar pra outro hexadecimal se quiser
+    .setTitle('🎬 Sessão Iniciada!')
+    .setDescription('A sessão está iniciada, prepare a pipoca!')
+    .addFields([
+      {
+        name: '⏱️ 15 minutos para indicarem',
+        value: 'Após isso as indicações são encerradas.',
+      },
+    ])
+    .setFooter({ text: 'Bom filme! 🍿' })
+    .setTimestamp()
+
+  await channel.send({
+    // content: `Teste, você entrou na call! Deseja entrar na party?`,
+    embeds: [embed],
+    components: [],
+  })
 }
