@@ -97,9 +97,9 @@ client.on(Events.MessageCreate, async msg => {
 
   if (msg.content.startsWith('!indica')) await indicate(msg);
 
-  // if (msg.content.startsWith('!mudarfilme')) await changeFilm(msg);
-
   if (msg.content === '!sorteio') await raffle(msg);
+  
+  // if (msg.content.startsWith('!mudarfilme')) await changeFilm(msg);
 
   if (msg.content === '!lista') await list(msg);
 
@@ -109,7 +109,7 @@ client.on(Events.MessageCreate, async msg => {
 
   if (msg.content === '!media') await average(msg);
 
-  if (msg.content === '!ingresso') await ticket(msg);
+  // if (msg.content === '!ingresso') await ticket(msg);
 
   if (msg.content === '!sala') await showRoom(msg);
 
