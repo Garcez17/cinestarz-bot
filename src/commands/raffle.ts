@@ -7,11 +7,6 @@ import { hasSession } from "../utils/hasSession";
 import { embedMessage } from "../utils/EmbedMessage";
 import { format } from "date-fns";
 
-type Rating = {
-  Source: string;
-  Value: string;
-}
-
 type GetFilmDetailsProps = {
   movieId: string
   userId: string
@@ -37,7 +32,7 @@ async function getFilmDetails({ movieId, userId }: GetFilmDetailsProps) {
       { name: "🎯 Indicado por", value: `<@${userId}>`, inline: true },
     ])
     .setThumbnail(`https://image.tmdb.org/t/p/w500${data.poster_path}`)
-    .setFooter({ text: "Fonte: TMDB" })
+    // .setFooter({ text: "Fonte: TMDB" })
 
   return { embed }
 }
@@ -110,12 +105,16 @@ export async function raffle(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
     collector.on("collect", async (interaction) => {
       const movieId = interaction.customId
       const movie = slicedResults.find((movie: any) => String(movie.id) === movieId)
-    
+
       if (!movie) return interaction.reply({ content: "Filme não encontrado!" })
     
       const { embed } = await getFilmDetails({ movieId, userId: drawnFilm.userId })
 
-      await interaction.reply({ embeds: [embed] })
+      if (interaction.replied) {
+        await interaction.editReply({ embeds: [embed] })
+      } else {
+        await interaction.reply({ embeds: [embed] })
+      }
     })
   } catch (err) {
     console.log('error =>', err)

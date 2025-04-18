@@ -17,6 +17,10 @@ import { stop } from './commands/stop';
 import { award } from './commands/award';
 import { awardMessage } from './commands/stzaward/awardMessage';
 import { awardVote } from './commands/stzaward/awardVote';
+import { party } from "./commands/party";
+import { enterParty } from "./socket/enter-party";
+import { collectionGroup, getDocs, query, where } from "firebase/firestore";
+import { firestore } from "./services/firebase";
 
 const client = new Client({
   intents: [
@@ -97,7 +101,9 @@ client.on(Events.MessageCreate, async msg => {
 
   if (msg.content.startsWith('!indica')) await indicate(msg);
 
-  if (msg.content === '!sorteio') await raffle(msg);
+  if (msg.content === '!sorteio') await raffle(msg)
+
+  if (msg.content.startsWith('!party')) await party(msg)
   
   // if (msg.content.startsWith('!mudarfilme')) await changeFilm(msg);
 
@@ -127,16 +133,17 @@ client.on(Events.MessageCreate, async msg => {
 })
 
 
-const io = new Server(8080, {
+export const io = new Server(8080, {
   cors: { origin: "*" }
 })
 
 io.on('connection', socket => {
   console.log('connection =>', socket.id)
-  socket.join('players')
+  // socket.join('players')
+  enterParty(socket)
+
   socket.on('pause', () => {
     console.log('pause!!')
-
     socket.broadcast.to('players').emit('pause_test')
   })
 
