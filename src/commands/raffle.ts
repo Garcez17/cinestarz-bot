@@ -6,6 +6,8 @@ import { hasSession } from "../utils/hasSession";
 
 import { embedMessage } from "../utils/EmbedMessage";
 import { format } from "date-fns";
+import { doc, updateDoc } from "firebase/firestore";
+import { firestore } from "../services/firebase";
 
 type GetFilmDetailsProps = {
   movieId: string
@@ -32,7 +34,7 @@ async function getFilmDetails({ movieId, userId }: GetFilmDetailsProps) {
       { name: "🎯 Indicado por", value: `<@${userId}>`, inline: true },
     ])
     .setThumbnail(`https://image.tmdb.org/t/p/w500${data.poster_path}`)
-    // .setFooter({ text: "Fonte: TMDB" })
+    .setFooter({ text: "Fonte: TMDB" })
 
   return { embed }
 }
@@ -60,8 +62,18 @@ export async function raffle(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
     })
 
     const { results } = response.data
+    const sessionsRef = doc(firestore, `guilds/${msg.guild?.id}/sessions/${session.collectionName}`)
 
     if (results.length === 1) {
+      const raffledMovie = results[0]
+
+      await updateDoc(sessionsRef, {
+        movie: {
+          status: 'pause',
+          title: raffledMovie.title,
+        }
+      })
+
       const { embed } = await getFilmDetails({
         movieId: results[0].id,
         userId: drawnFilm.userId,
@@ -107,6 +119,13 @@ export async function raffle(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
       const movie = slicedResults.find((movie: any) => String(movie.id) === movieId)
 
       if (!movie) return interaction.reply({ content: "Filme não encontrado!" })
+
+      await updateDoc(sessionsRef, {
+        movie: {
+          status: 'pause',
+          title: movie.title,
+        }
+      })
     
       const { embed } = await getFilmDetails({ movieId, userId: drawnFilm.userId })
 

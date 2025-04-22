@@ -1,36 +1,30 @@
-import { collectionGroup, getDocs, query, where } from "firebase/firestore";
-import type { Socket } from "socket.io";
-import { firestore } from "../services/firebase";
-import { io } from "..";
+import type { Socket } from "socket.io"
+import { getActiveParty } from "../utils/getParty"
 
 export async function enterParty(socket: Socket) {
   socket.on('enter-party', async (data, callback) => {
-    const { partyId } = data
+    const { partyId, user } = data
 
-    console.log('partyId ==>', partyId)
+    const party = await getActiveParty({
+      partyId,
+    })
 
-    const q = query(
-      collectionGroup(firestore, 'sessions'),
-      where('status', 'in', ['OPEN', 'VOTING'])
-    )
+    if (!party) return
 
-    const snapshot = await getDocs(q)
+    const session = party.data()
 
-    const matchingSession = snapshot.docs.find(doc => doc.id === partyId)
+    socket.join(session.collectionName)
 
-    if (matchingSession) {
-      const session = matchingSession.data()
-
-      socket.join(session.collectionName)
-
-      console.log('rooms', Array.from(socket.rooms))
-      callback({
-        name: 'new-user',
-        avatarUrl: 'avatar-url',
-        socketId: 'socket-id'
-      })
-    } else {
-      // send an error to extension
+    const userData = {
+      name: user?.username,
+      avatarUrl: user.avatar,
+      socketId: socket.id,
+      globalName: user?.globalName,
+      id: user.id,
     }
+
+    // callback(userData)
+
+    socket.broadcast.to(session.collectionName).emit('new-user', userData)
   })
 }
