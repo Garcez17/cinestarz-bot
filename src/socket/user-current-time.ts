@@ -20,6 +20,7 @@ export async function userCurrentTime(socket: Socket) {
 
     partyCache.set(partyId, { currentTime, runAt })
 
-    console.log('user_current_time ==>', data, socket.id)
+    socket.broadcast.to(session.collectionName)
+      .emit('host_current_time', { hostCurrentTime: currentTime })
   })
 }

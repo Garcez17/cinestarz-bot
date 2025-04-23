@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, Events, GatewayIntentBits, MessageFlags, Partials } from "discord.js";
-import { Server } from 'socket.io'
+import { Server } from 'socket.io';
 import 'dotenv/config';
 
 import { startSession } from './commands/start';
@@ -10,17 +10,16 @@ import { list } from './commands/list';
 import { clear } from './commands/clear';
 import { notes } from './commands/note';
 import { average } from './commands/average';
-import { ticket } from './commands/ticket';
 import { showRoom } from './commands/room';
 import { finalize } from './commands/finalize';
 import { stop } from './commands/stop';
-import { award } from './commands/award';
-import { awardMessage } from './commands/stzaward/awardMessage';
-import { awardVote } from './commands/stzaward/awardVote';
 import { party } from "./commands/party";
 import { enterParty } from "./socket/enter-party";
-import { collectionGroup, getDocs, query, where } from "firebase/firestore";
-import { firestore } from "./services/firebase";
+import { getParty } from "./socket/getParty";
+import { pause } from "./socket/pause";
+import { play } from "./socket/play";
+import { userManualSeek } from "./socket/user-manual-seek";
+import { userCurrentTime } from "./socket/user-current-time";
 
 const client = new Client({
   intents: [
@@ -139,28 +138,23 @@ export const io = new Server(8080, {
 
 io.on('connection', socket => {
   console.log('connection =>', socket.id)
-  // socket.join('players')
   enterParty(socket)
 
-  socket.on('pause', () => {
-    console.log('pause!!')
-    socket.broadcast.to('players').emit('pause_test')
+  getParty(socket)
+
+  pause(socket)
+
+  play(socket)
+
+  userManualSeek(socket)
+
+  userCurrentTime(socket)
+
+  socket.on('disconnect', (data) => {
+    console.log('desconectado =>', data)
+    // const allRooms = io.of("/").adapter.rooms
+    // const room = io.of('/').adapter.rooms.get("8772378616388690769a91607c-7145-43e0-bcad-7ac8c238eab9")
+  
+    // LOGICA PARA DELETAR O CACHE DA ROOM INEXISTENTE*
   })
-
-  socket.on('req_play', () => {
-    console.log('play')
-    socket.broadcast.to('players').emit('play')
-  })
-
-  socket.on('info_manual_seek', (data) => {
-    console.log('manual_seek ==>', data)
-
-    socket.broadcast.to('players').emit('manual_seek', {
-      currentTime: data.currentTime,
-    })
-  })
-
-  // socket.on('info_user_current_time', (data) => {
-  //   console.log('user_current_time ==>', data)
-  // })
 })
