@@ -33,6 +33,7 @@ export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolea
     startedAt: new Date(),
     status: "VOTING",
     movie: null,
+    host: msg.author.id,
     participants: [{
       id: msg.author.id,
       username: msg.author.username,
@@ -49,71 +50,8 @@ export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolea
 
   await setDoc(document, session)
 
-  // const createSession = await fauna.query<Session>(
-  //   q.If(
-  //     q.Not(
-  //       q.Exists(
-  //         q.Match(
-  //           q.Index('session_by_server_id'),
-  //           q.Casefold(msg.channel.id)
-  //         )
-  //       )
-  //     ),
-  //     q.Create(
-  //       q.Collection('sessions'),
-  //       {
-  //         data: {
-  //           server_id: msg.channel.id,
-  //           started_at: String(new Date),
-  //           session_number: 1,
-  //           room: [],
-  //           indications: [],
-  //           raffle_film: {
-  //             notes: [],
-  //           }
-  //         }
-  //       }
-  //     ),
-  //     q.Let(
-  //       {
-  //         doc: q.Get(q.Match(q.Index("session_by_server_id"), msg.channel.id)),
-  //       },
-  //       q.Update(
-  //         q.Select(["ref"], q.Var('doc')),
-  //         {
-  //           data: {
-  //             started_at: String(new Date),
-  //           }
-  //         }
-  //       )
-  //     )
-  //   )
-  // )
-
-  const date = new Date();
-
-
-  // if (channel instanceof TextChannel) {
-  //   channel.send({
-  //     embeds: [
-  //       new EmbedBuilder()
-  //         .setColor(0x3498db)
-  //         .setTitle("Criando usuário...")
-  //         .setDescription("A sessão está iniciada!")
-  //         .addFields([
-  //           {
-  //             name: "15 minutos para indicarem!",
-  //             value: "Após isso as indicações são encerradas.",
-  //           },
-  //         ])
-  //         .setFooter({ text: "Bom filme! 😀" })
-  //         .setTimestamp()
-  //     ]
-  //   })
-  // }
-
   const embed = new EmbedBuilder()
-    .setColor(0x3498db) // azul bonito, pode mudar pra outro hexadecimal se quiser
+    .setColor(0x3498db)
     .setTitle('🎬 Sessão Iniciada!')
     .setDescription('A sessão está iniciada, prepare a pipoca!')
     .addFields([
@@ -126,7 +64,6 @@ export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolea
     .setTimestamp()
 
   await channel.send({
-    // content: `Teste, você entrou na call! Deseja entrar na party?`,
     embeds: [embed],
     components: [],
   })

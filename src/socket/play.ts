@@ -1,8 +1,8 @@
 import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
 
-export async function getParty(socket: Socket) {
-  socket.on('get-party', async (data, callback) => {
+export async function play(socket: Socket) {
+  socket.on('req_play', async (data) => {
     const { partyId } = data
 
     const party = await getActiveParty({
@@ -13,11 +13,9 @@ export async function getParty(socket: Socket) {
 
     const session = party.data()
 
-    const partyData = {
-      movie: session?.movie,
-      participants: session.participants,
-    }
+    console.log('play!!')
 
-    callback(partyData)
+    socket.broadcast.to(session.collectionName)
+      .emit('play')
   })
 }

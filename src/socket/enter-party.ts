@@ -1,5 +1,6 @@
 import type { Socket } from "socket.io"
-import { getActiveParty } from "../utils/getParty"
+import { getActiveParty } from "../utils/getActiveParty"
+import { updateDoc } from "firebase/firestore"
 
 export async function enterParty(socket: Socket) {
   socket.on('enter-party', async (data, callback) => {
@@ -15,6 +16,13 @@ export async function enterParty(socket: Socket) {
 
     socket.join(session.collectionName)
 
+    const participants = session.participants.map((participant: any) => participant.id === user.id ? ({
+      ...participant,
+      socketId: socket.id,
+    }) : participant)
+
+    updateDoc(party.ref, { participants })
+
     const userData = {
       name: user?.username,
       avatarUrl: user.avatar,
@@ -23,7 +31,9 @@ export async function enterParty(socket: Socket) {
       id: user.id,
     }
 
-    // callback(userData)
+    const isHost = participants.find((participant: any) => participant.id === user.id).id === session.host
+
+    callback({ isHost })
 
     socket.broadcast.to(session.collectionName).emit('new-user', userData)
   })
