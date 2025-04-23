@@ -1,5 +1,6 @@
 import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
+import { partyCache } from "../utils/PartyStateCache"
 
 export async function userCurrentTime(socket: Socket) {
   socket.on('user_current_time', async (data) => {
@@ -15,10 +16,9 @@ export async function userCurrentTime(socket: Socket) {
 
     const user = session.participants.find((participant: any) => participant.socketId === socket.id)
 
-    if (session.host !== user.id) {
-      console.log("you're not party host!")
-      return
-    }
+    if (session.host !== user?.id) return
+
+    partyCache.set(partyId, { currentTime, runAt })
 
     console.log('user_current_time ==>', data, socket.id)
   })

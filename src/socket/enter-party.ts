@@ -1,6 +1,7 @@
 import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
 import { updateDoc } from "firebase/firestore"
+import { partyCache } from "../utils/PartyStateCache"
 
 export async function enterParty(socket: Socket) {
   socket.on('enter-party', async (data, callback) => {
@@ -33,7 +34,9 @@ export async function enterParty(socket: Socket) {
 
     const isHost = participants.find((participant: any) => participant.id === user.id).id === session.host
 
-    callback({ isHost })
+    const cached = partyCache.get(partyId)
+
+    callback({ syncTime: cached?.currentTime, isHost })
 
     socket.broadcast.to(session.collectionName).emit('new-user', userData)
   })
