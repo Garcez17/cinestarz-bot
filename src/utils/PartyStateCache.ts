@@ -1,5 +1,6 @@
 type PartyData = {
   currentTime: number
+  currentRate: number
   runAt: number
 }
 

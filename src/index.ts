@@ -20,6 +20,7 @@ import { pause } from "./socket/pause";
 import { play } from "./socket/play";
 import { userManualSeek } from "./socket/user-manual-seek";
 import { userCurrentTime } from "./socket/user-current-time";
+import { userRateChange } from "./socket/user-rate-change";
 
 const client = new Client({
   intents: [
@@ -149,6 +150,8 @@ io.on('connection', socket => {
   userManualSeek(socket)
 
   userCurrentTime(socket)
+
+  userRateChange(socket)
 
   socket.on('disconnect', (data) => {
     console.log('desconectado =>', data)
