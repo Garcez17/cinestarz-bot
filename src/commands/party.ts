@@ -1,7 +1,35 @@
 import { type OmitPartialGroupDMChannel, type Message, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from "discord.js";
 import { noSession } from "../errors/NoSession";
-import { hasSession } from "../utils/hasSession";
+import { getSession } from "../utils/getSession";
 import { embedMessage } from "../utils/EmbedMessage";
+import type { DiscordChannel, Session } from "../@types";
+import { updateDoc, type DocumentData, type DocumentReference } from "firebase/firestore";
+
+interface PartyProps {
+  channel: DiscordChannel
+  guildId: string
+  authorId: string
+  content: string
+}
+
+function parseVideoUrl(url: string) {
+  const parsedUrl = new URL(url)
+  const hostname = parsedUrl.hostname
+  const partyId = parsedUrl.searchParams.get('party')
+
+  if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+    const videoId = parsedUrl.searchParams.get('v') || parsedUrl.pathname.split('/').pop() || null
+    return { provider: 'YouTube', videoId, partyId }
+  }
+
+  // if (hostname.includes('netflix.com')) {
+  //   const match = parsedUrl.pathname.match(/\/watch\/(\d+)/)
+  //   const videoId = match ? match[1] : null
+  //   return { provider: 'Netflix', videoId, partyId }
+  // }
+
+  return { provider: 'Unknown', videoId: null, partyId }
+}
 
 export function createPartyEmbed(url: string, initiatedBy: string) {
   const embed = new EmbedBuilder()
@@ -33,26 +61,61 @@ export function createPartyEmbed(url: string, initiatedBy: string) {
   return { embed, row }
 }
 
-export async function party(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
-  const session = await hasSession(msg)
-  const channel = msg.channel
+interface GeneratePartyProps {
+  link: string
+  authorId: string
+  collectionName: string
+  channel: DiscordChannel
+  ref: DocumentReference<DocumentData>
+  session: Session
+  content?: {
+    url: string,
+    title: string,
+  }
+  title?: string
+}
 
-  if (!session) return noSession(msg)
+export async function generateParty({ link, collectionName, authorId, channel, ref, content, session }: GeneratePartyProps) {
+  const partyLink = `${link}&party=${collectionName}`
 
-  const link = msg.content.replace('!party', '').trim()
+  const contentData = parseVideoUrl(partyLink)
 
-  console.log('testeee', link)
-  if (!link)
-    return embedMessage('Insira a url da party', msg, 160000)
+  await updateDoc(ref, {
+    content: {
+      title: content?.title,
+      provider: contentData.provider,
+      videoId: contentData.videoId,
+      ...session.content
+    }
+  })
 
-  const partyLink = `${link}&party=${session.collectionName}`
-
-  console.log('partyLink ==>', partyLink)
-
-  const { embed, row } = createPartyEmbed(partyLink, msg.author.id)
+  const { embed, row } = createPartyEmbed(partyLink, authorId)
 
   await channel.send({
     embeds: [embed],
     components: [row],
+  })
+}
+
+export async function party({ channel, guildId, content, authorId }: PartyProps) {
+  const { session, ref } = await getSession({
+    channel,
+    guildId,
+  })
+
+  if (!session || !ref) return noSession({ channel })
+
+  const link = content.replace('!party', '').trim()
+
+  if (!link)
+    return embedMessage('Insira a url da party', channel, 160000)
+
+  await generateParty({
+    authorId,
+    channel,
+    collectionName: session.collectionName,
+    link,
+    ref,
+    session,
   })
 }

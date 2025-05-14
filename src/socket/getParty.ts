@@ -14,7 +14,7 @@ export async function getParty(socket: Socket) {
     const session = party.data()
 
     const partyData = {
-      movie: session?.movie,
+      content: session?.content,
       participants: session.participants,
     }
 

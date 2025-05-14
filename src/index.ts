@@ -21,6 +21,7 @@ import { play } from "./socket/play";
 import { userManualSeek } from "./socket/user-manual-seek";
 import { userCurrentTime } from "./socket/user-current-time";
 import { userRateChange } from "./socket/user-rate-change";
+import { createParty } from "./socket/create-party";
 
 const client = new Client({
   intents: [
@@ -38,30 +39,30 @@ client.on('ready', () => console.log("Client started!"));
 
 const TARGET_CHANNEL_ID = '877237861638869076'
 
-client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
-  const member = newState.member
+// client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+//   const member = newState.member
 
-  if (!member) return
+//   if (!member) return
 
-  if (!oldState.channel && newState.channel?.id === TARGET_CHANNEL_ID) {
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`join_party_${member.id}`)
-        .setLabel('Entrar na party 🎉')
-        .setStyle(ButtonStyle.Primary)
-    )
+//   if (!oldState.channel && newState.channel?.id === TARGET_CHANNEL_ID) {
+//     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+//       new ButtonBuilder()
+//         .setCustomId(`join_party_${member.id}`)
+//         .setLabel('Entrar na party 🎉')
+//         .setStyle(ButtonStyle.Primary)
+//     )
 
-    const channel = newState.guild.channels.cache.get(TARGET_CHANNEL_ID)
-    if (channel?.isTextBased()) {
-      await channel.send({
-        content: `<@${member.id}>, você entrou na call! Deseja entrar na party?`,
-        components: [row],
-      })
+//     const channel = newState.guild.channels.cache.get(TARGET_CHANNEL_ID)
+//     if (channel?.isTextBased()) {
+//       await channel.send({
+//         content: `<@${member.id}>, você entrou na call! Deseja entrar na party?`,
+//         components: [row],
+//       })
 
-      // setTimeout(() => msg.delete().catch(() => {}), 30000)
-    }
-  }
-})
+//       // setTimeout(() => msg.delete().catch(() => {}), 30000)
+//     }
+//   }
+// })
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return
@@ -96,14 +97,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
 })
 
 client.on(Events.MessageCreate, async msg => {
-  // console.log('message', msg)
-  if (msg.content === '!start') await startSession(msg);
+  const { channel, guild, author, content } = msg
+
+  if (content === '!start') await startSession({
+    channel: channel,
+    guildId: guild!.id,
+    user: {
+      id: author.id,
+      avatar: author.avatar,
+      displayName: author.displayName,
+      username: author.username,
+    }
+  })
 
   if (msg.content.startsWith('!indica')) await indicate(msg);
 
   if (msg.content === '!sorteio') await raffle(msg)
 
-  if (msg.content.startsWith('!party')) await party(msg)
+  if (msg.content.startsWith('!party')) await party({
+    authorId: author.id,
+    channel,
+    content,
+    guildId: guild!.id,
+  })
   
   // if (msg.content.startsWith('!mudarfilme')) await changeFilm(msg);
 
@@ -152,6 +168,8 @@ io.on('connection', socket => {
   userCurrentTime(socket)
 
   userRateChange(socket)
+
+  createParty(socket, client)
 
   socket.on('disconnect', (data) => {
     console.log('desconectado =>', data)

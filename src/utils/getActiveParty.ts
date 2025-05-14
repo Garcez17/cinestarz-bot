@@ -8,14 +8,14 @@ type GetActivePartyProps = {
 export async function getActiveParty(data: GetActivePartyProps) {
   const { partyId } = data
 
-    const q = query(
-      collectionGroup(firestore, 'sessions'),
-      where('status', 'in', ['OPEN', 'VOTING'])
-    )
+  const q = query(
+    collectionGroup(firestore, 'sessions'),
+    where('status', 'in', ['OPEN', 'VOTING'])
+  )
 
-    const snapshot = await getDocs(q)
+  const snapshot = await getDocs(q)
 
-    const matchingSession = snapshot.docs.find(doc => doc.id === partyId)
+  const matchingSession = snapshot.docs.find(doc => doc.id === partyId)
 
-    return matchingSession
+  return matchingSession
 }

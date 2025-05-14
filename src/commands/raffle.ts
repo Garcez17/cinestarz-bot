@@ -2,24 +2,56 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuild
 
 import { noSession } from "../errors/NoSession";
 import { api } from "../services/api";
-import { hasSession } from "../utils/hasSession";
+import { getSession } from "../utils/getSession";
 
 import { embedMessage } from "../utils/EmbedMessage";
 import { format } from "date-fns";
-import { doc, updateDoc } from "firebase/firestore";
-import { firestore } from "../services/firebase";
+import { updateDoc, type DocumentData, type DocumentReference } from "firebase/firestore";
+import type { DiscordChannel, Suggestion } from "../@types";
 
-type GetFilmDetailsProps = {
+type GenerateTmdbEmbedProps = {
   movieId: string
   userId: string
 }
 
-async function getFilmDetails({ movieId, userId }: GetFilmDetailsProps) {
+type GenerateYoutubeEmbedProps = {
+  title: string
+  description: string
+  thumbnail: string
+  userId: string
+}
+
+type GetFilmDetailsProps = {
+  channel: DiscordChannel
+  ref: DocumentReference<DocumentData>
+  suggestion: Suggestion
+  providerContent?: any
+}
+
+function generateYoutubeEmbed({ 
+  title, 
+  userId,
+  description,
+  thumbnail, 
+}: GenerateYoutubeEmbedProps) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description || "Sem descrição disponível.")
+    .addFields([
+      { name: "🗓️ Lançamento", value: format(new Date(), "dd/MM/yyyy"), inline: true },
+      { name: "📺 Plataformas", value: 'Youtube', inline: true },
+      { name: "🎯 Indicado por", value: `<@${userId}>`, inline: true },
+    ])
+    .setThumbnail(thumbnail)
+    .setFooter({ text: "Fonte: Youtube" })
+
+  return { embed }
+}
+
+async function generateTmdbEmbed({ movieId, userId }: GenerateTmdbEmbedProps) {
   const { data } = await api.get(`/movie/${movieId}?language=pt-BR&append_to_response=watch/providers`)
-
+  // buscar data from call (sinopse)
   const providers = data["watch/providers"]?.results?.BR?.flatrate || []
-
-  console.log(data["watch/providers"]?.results?.BR)
 
   const streamings = providers.length
     ? providers.map((p: any) => p.provider_name).join(", ")
@@ -39,51 +71,50 @@ async function getFilmDetails({ movieId, userId }: GetFilmDetailsProps) {
   return { embed }
 }
 
-export async function raffle(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
-  const session = await hasSession(msg)
-
-  if (!session) return noSession(msg)
-
-  if (session.movieSuggestions.length === 0)
-    return embedMessage('Não há filmes na lista de sorteios.', msg, 160000)
-
-  const randomIndicationsIndex = Math.floor(Math.random() * session.movieSuggestions.length)
-
-  const drawnFilm = session.movieSuggestions[randomIndicationsIndex]
-
-  const channel = msg.channel
-
+export async function getFilmDetails({ channel, ref, suggestion, providerContent }: GetFilmDetailsProps) {
   try {
     const response = await api.get('/search/movie', {
       params: {
-        query: drawnFilm.filmName,
+        query: suggestion.content,
         language: "pt-BR",
       }
     })
 
     const { results } = response.data
-    const sessionsRef = doc(firestore, `guilds/${msg.guild?.id}/sessions/${session.collectionName}`)
+
+    if (results.length === 0) {
+      const { embed } = generateYoutubeEmbed({
+        description: providerContent?.description,
+        thumbnail: providerContent?.thumbnail,
+        title: providerContent?.title,
+        userId: suggestion.userId,
+      })
+
+      await channel.send({ embeds: [embed] })
+
+      return
+    }
 
     if (results.length === 1) {
       const raffledMovie = results[0]
 
-      await updateDoc(sessionsRef, {
-        movie: {
+      await updateDoc(ref, {
+        content: {
           status: 'pause',
           title: raffledMovie.title,
         }
       })
 
-      const { embed } = await getFilmDetails({
+      const { embed } = await generateTmdbEmbed({
         movieId: results[0].id,
-        userId: drawnFilm.userId,
+        userId: suggestion.userId,
       })
 
       await channel.send({ embeds: [embed] })
       return
     }
 
-    await channel.send(`🎲 O filme sorteado foi: **${drawnFilm.filmName}**`)
+    await channel.send(`🎲 O filme sorteado foi: **${suggestion.content}**`)
 
     const slicedResults = results.slice(0, 4) as Array<any>
     
@@ -120,14 +151,14 @@ export async function raffle(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
 
       if (!movie) return interaction.reply({ content: "Filme não encontrado!" })
 
-      await updateDoc(sessionsRef, {
+      await updateDoc(ref, {
         movie: {
           status: 'pause',
           title: movie.title,
         }
       })
     
-      const { embed } = await getFilmDetails({ movieId, userId: drawnFilm.userId })
+      const { embed } = await generateTmdbEmbed({ movieId, userId: suggestion.userId })
 
       if (interaction.replied) {
         await interaction.editReply({ embeds: [embed] })
@@ -138,4 +169,28 @@ export async function raffle(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
   } catch (err) {
     console.log('error =>', err)
   }
+}
+
+export async function raffle(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
+  const { session, ref } = await getSession({
+    channel: msg.channel,
+    guildId: msg.guild!.id,
+  })
+
+  if (!session || !ref) return noSession(msg)
+
+  if (session.suggestions.length === 0)
+    return embedMessage('Não há filmes na lista de sorteios.', msg.channel, 160000)
+
+  const randomIndicationsIndex = Math.floor(Math.random() * session.suggestions.length)
+
+  const drawnSuggestion = session.suggestions[randomIndicationsIndex]
+
+  const channel = msg.channel
+
+  await getFilmDetails({
+    channel,
+    ref,
+    suggestion: drawnSuggestion,
+  })
 }

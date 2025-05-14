@@ -1,50 +1,67 @@
-import { EmbedBuilder, Message, type OmitPartialGroupDMChannel } from "discord.js";
-import { hasSession } from "../utils/hasSession";
-import { doc, setDoc } from "firebase/firestore";
-import { firestore } from "../services/firebase";
-import { randomUUID } from "node:crypto";
+import { EmbedBuilder } from "discord.js"
+import { getSession } from "../utils/getSession"
+import { doc, setDoc } from "firebase/firestore"
+import { firestore } from "../services/firebase"
+import { randomUUID } from "node:crypto"
+import type { DiscordChannel } from "../@types"
 
-export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolean>>): Promise<void> {
-  const findExistentSession = await hasSession(msg)
+interface StartSessionProps {
+  channel: DiscordChannel
+  guildId: string
+  user: {
+    id: string
+    username: string
+    avatar: string | null
+    displayName: string
+  }
+}
 
-  const channel = msg.channel
+export async function startSession({ channel, guildId, user }: StartSessionProps): Promise<'OK' | 'SESSION_ALREADY_EXISTS'> {
+  const { session: findExistentSession } = await getSession({
+    channel,
+    guildId,
+  })
 
   if (findExistentSession) {
-    const embed = new EmbedBuilder()
-      .setColor(0x3498db)
-      .setTitle('🎬 Existe uma sessão em andamento, finalize essa para iniciar outra!')
-      .setTimestamp()
+    if (findExistentSession.content?.contentId) {
+      const embed = new EmbedBuilder()
+        .setColor(0x3498db)
+        .setTitle('🎬 Existe uma sessão em andamento, finalize essa para iniciar outra!')
+        .setTimestamp()
 
-    await channel.send({
-      embeds: [embed],
-      components: [],
-    })
+      await channel.send({
+        embeds: [embed],
+        components: [],
+      })
 
-    return
+      return 'SESSION_ALREADY_EXISTS'
+    }
+
+    return 'OK'
   }
 
-  const collectionName = msg.channel.id + randomUUID()
+  const collectionName = channel.id + randomUUID()
 
-  const document = doc(firestore, `guilds/${msg.guild!.id}/sessions/${collectionName}`)
+  const document = doc(firestore, `guilds/${guildId}/sessions/${collectionName}`)
 
   const session = {
     collectionName,
-    channelId: msg.channel.id,
+    channelId: channel.id,
     startedAt: new Date(),
     status: "VOTING",
-    movie: null,
-    host: msg.author.id,
+    content: null,
+    host: user.id,
     participants: [{
-      id: msg.author.id,
-      username: msg.author.username,
-      avatar: `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png`,
-      nickname: msg.author?.displayName,
+      id: user.id,
+      username: user.username,
+      avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
+      nickname: user?.displayName,
     }],
     createdBy: {
-      id: msg.author.id,
-      username: msg.author.username,
+      id: user.id,
+      username: user.username,
     },
-    movieSuggestions: [],
+    suggestions: [],
     votes: {}
   }
 
@@ -67,4 +84,6 @@ export async function startSession(msg: OmitPartialGroupDMChannel<Message<boolea
     embeds: [embed],
     components: [],
   })
+
+  return 'OK'
 }
