@@ -36,7 +36,12 @@ export async function enterParty(socket: Socket) {
 
     const cached = partyCache.get(partyId)
 
-    callback({ syncTime: cached?.currentTime, isHost })
+    callback({
+      syncTime: cached?.currentTime, 
+      isHost,
+      enableRequests: session.content.enableRequests,
+      onlyHostControls: session.content.onlyHostControls,
+    })
 
     socket.broadcast.to(session.collectionName).emit('new-user', userData)
   })

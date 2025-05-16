@@ -8,9 +8,7 @@ import { generateParty } from "../commands/party"
 
 export async function createParty(socket: Socket, client: Client) {
   socket.on('req_create_party', async (data, cb) => {
-    const { userId, content, providerContent } = data
-
-    console.log(data)
+    const { userId, content } = data
 
     const guilds = client.guilds.cache
 
@@ -45,13 +43,13 @@ export async function createParty(socket: Socket, client: Client) {
 
         await getFilmDetails({
           channel: voiceChannel,
-          providerContent,
+          providerContent: content.provider,
           suggestion: {
             content: normalizeTitle(content.title),
             rawTitle: content.title,
             userId: member.id,
           },
-          ref: ref!,
+          ref,
         })
 
         await generateParty({
