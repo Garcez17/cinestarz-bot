@@ -1,22 +1,20 @@
-import { query as q } from 'faunadb';
 import { addMinutes, isAfter } from "date-fns";
 import { Message, type OmitPartialGroupDMChannel } from "discord.js";
 
 import { noSession } from "../errors/NoSession";
 
-import { hasSession } from "../utils/hasSession";
+import { getSession } from "../utils/getSession";
 import { titleize } from "../utils/titleize";
 
-import { fauna } from "../services/fauna";
-
-import { Indication, User } from "../@types";
 import { embedMessage } from '../utils/EmbedMessage';
-import { verifyRoom } from '../errors/VerifyRoom';
 import { firestore } from '../services/firebase';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export async function indicate(msg: OmitPartialGroupDMChannel<Message<boolean>>) {
-  const session = await hasSession(msg);
+  const { session } = await getSession({
+    channel: msg.channel,
+    guildId: msg.guild!.id,
+  })
 
   if (!session) return noSession(msg);
 
@@ -43,11 +41,11 @@ export async function indicate(msg: OmitPartialGroupDMChannel<Message<boolean>>)
     return embedMessage('Você precisa estar na chamada para indicar', msg, 160000)
   }
 
-  const isUserAlreadyIndicate = session.movieSuggestions.some(suggestion => suggestion.userId === msg.author.id)
+  // const isUserAlreadyIndicate = session.suggestions.some(suggestion => suggestion.userId === msg.author.id)
 
-  if (isUserAlreadyIndicate) {
-    return embedMessage('Você já indicou filme para essa sessão!', msg, 160000)
-  }
+  // if (isUserAlreadyIndicate) {
+  //   return embedMessage('Você já indicou filme para essa sessão!', msg, 160000)
+  // }
 
   const guildId = msg.guild!.id
 
@@ -66,7 +64,7 @@ export async function indicate(msg: OmitPartialGroupDMChannel<Message<boolean>>)
 
   await updateDoc(sessionsRef, {
     participants,
-    movieSuggestions: [...session.movieSuggestions, {
+    suggestions: [...session.suggestions, {
       userId: msg.author.id,
       filmName
     }],

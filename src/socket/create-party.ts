@@ -5,9 +5,10 @@ import { normalizeTitle } from "../utils/normalizeSessionTitle"
 import { getFilmDetails } from "../commands/raffle"
 import { getSession } from "../utils/getSession"
 import { generateParty } from "../commands/party"
+import { SOCKET_EVENTS } from "../@types/constants"
 
 export async function createParty(socket: Socket, client: Client) {
-  socket.on('req_create_party', async (data, cb) => {
+  socket.on(SOCKET_EVENTS.EVT.CREATE_PARTY, async (data, cb) => {
     const { userId, content } = data
 
     const guilds = client.guilds.cache

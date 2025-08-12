@@ -2,9 +2,10 @@ import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
 import { updateDoc } from "firebase/firestore"
 import { partyCache } from "../utils/PartyStateCache"
+import { SOCKET_EVENTS } from "../@types/constants"
 
 export async function enterParty(socket: Socket) {
-  socket.on('enter-party', async (data, callback) => {
+  socket.on(SOCKET_EVENTS.EVT.JOIN_PARTY, async (data, callback) => {
     const { partyId, user } = data
 
     const party = await getActiveParty({
@@ -23,6 +24,11 @@ export async function enterParty(socket: Socket) {
     }) : participant)
 
     updateDoc(party.ref, { participants })
+
+    console.log('NEW USER =>', {
+      user,
+      socket: socket.id,
+    })
 
     const userData = {
       name: user?.username,
@@ -43,6 +49,6 @@ export async function enterParty(socket: Socket) {
       onlyHostControls: session.content.onlyHostControls,
     })
 
-    socket.broadcast.to(session.collectionName).emit('new-user', userData)
+    socket.broadcast.to(session.collectionName).emit(SOCKET_EVENTS.EVT.NEW_USER, userData)
   })
 }

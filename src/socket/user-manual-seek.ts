@@ -1,9 +1,10 @@
 import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
 import { addMilliseconds, differenceInMilliseconds } from "date-fns"
+import { SOCKET_EVENTS } from "../@types/constants"
 
 export async function userManualSeek(socket: Socket) {
-  socket.on('user_manual_seek', async (data) => {
+  socket.on(SOCKET_EVENTS.EVT.MANUAL_SEEK, async (data) => {
     const { partyId, currentTime, runAt } = data
 
     const party = await getActiveParty({
@@ -38,6 +39,6 @@ export async function userManualSeek(socket: Socket) {
     console.log('manual_seek ==>', data)
 
     socket.broadcast.to(session.collectionName)
-      .emit('manual_seek', { currentTime })
+      .emit(SOCKET_EVENTS.EVT.MANUAL_SEEK, { currentTime })
   })
 }

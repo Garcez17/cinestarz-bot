@@ -69,6 +69,11 @@ interface GeneratePartyProps {
   ref: DocumentReference<DocumentData>
   session: Session
   content?: {
+    provider: {
+      title: string,
+      description: string,
+      thumbnail: string,
+    },
     url: string,
     title: string,
   }
@@ -82,8 +87,10 @@ export async function generateParty({ link, collectionName, authorId, channel, r
 
   await updateDoc(ref, {
     content: {
-      title: content?.title,
+      title: content?.provider.title,
       provider: contentData.provider,
+      onlyHostControls: true,
+      enableRequests: true,
       videoId: contentData.videoId,
       ...session.content
     }

@@ -1,9 +1,10 @@
 import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
 import { partyCache } from "../utils/PartyStateCache"
+import { SOCKET_EVENTS } from "../@types/constants"
 
 export async function userCurrentTime(socket: Socket) {
-  socket.on('user_current_time', async (data) => {
+  socket.on(SOCKET_EVENTS.EVT.HOST_CURRENT_TIME, async (data) => {
     const { partyId, currentTime, runAt } = data
 
     const party = await getActiveParty({
@@ -21,6 +22,6 @@ export async function userCurrentTime(socket: Socket) {
     partyCache.set(partyId, { currentTime, runAt })
 
     socket.broadcast.to(session.collectionName)
-      .emit('host_current_time', { hostCurrentTime: currentTime })
+      .emit(SOCKET_EVENTS.EVT.HOST_CURRENT_TIME, { hostCurrentTime: currentTime })
   })
 }

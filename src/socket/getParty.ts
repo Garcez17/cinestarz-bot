@@ -1,8 +1,9 @@
 import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
+import { SOCKET_EVENTS } from "../@types/constants"
 
 export async function getParty(socket: Socket) {
-  socket.on('get-party', async (data, callback) => {
+  socket.on(SOCKET_EVENTS.EVT.GET_PARTY, async (data, callback) => {
     const { partyId } = data
 
     const party = await getActiveParty({

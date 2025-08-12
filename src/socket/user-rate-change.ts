@@ -1,9 +1,10 @@
 import type { Socket } from "socket.io"
 import { getActiveParty } from "../utils/getActiveParty"
 import { partyCache } from "../utils/PartyStateCache"
+import { SOCKET_EVENTS } from "../@types/constants"
 
 export async function userRateChange(socket: Socket) {
-  socket.on('rate_change', async (data) => {
+  socket.on(SOCKET_EVENTS.EVT.RATE_CHANGE, async (data) => {
     const { partyId, currentRate, runAt, currentTime } = data
 
     const party = await getActiveParty({
@@ -26,6 +27,6 @@ export async function userRateChange(socket: Socket) {
     })
 
     socket.broadcast.to(session.collectionName)
-      .emit('user_rate_time', { userCurrentTime: currentTime, currentRate })
+      .emit(SOCKET_EVENTS.EVT.CURRENT_RATE, { userCurrentTime: currentTime, currentRate })
   })
 }

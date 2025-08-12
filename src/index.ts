@@ -22,6 +22,7 @@ import { userManualSeek } from "./socket/user-manual-seek";
 import { userCurrentTime } from "./socket/user-current-time";
 import { userRateChange } from "./socket/user-rate-change";
 import { createParty } from "./socket/create-party";
+import { requestPause } from "./socket/interactions/requests/req-pause";
 
 const client = new Client({
   intents: [
@@ -170,6 +171,8 @@ io.on('connection', socket => {
   userRateChange(socket)
 
   createParty(socket, client)
+
+  requestPause(socket)
 
   socket.on('disconnect', (data) => {
     console.log('desconectado =>', data)

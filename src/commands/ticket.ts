@@ -4,12 +4,12 @@ import { Message } from "discord.js";
 import { fauna } from "../services/fauna";
 import { query as q } from 'faunadb';
 import { noSession } from "../errors/NoSession";
-import { hasSession } from "../utils/hasSession";
+import { getSession } from "../utils/getSession";
 import { User } from "../@types";
 import { embedMessage } from "../utils/EmbedMessage";
 
 export async function ticket(msg: Message) {
-  const session = await hasSession(msg);
+  const session = await getSession(msg);
 
   if (!session || !session.data.started_at) return noSession(msg);
 

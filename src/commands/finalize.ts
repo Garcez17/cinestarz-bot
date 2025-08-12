@@ -6,7 +6,7 @@ import { fauna } from "../services/fauna";
 
 import { User } from "../@types";
 import { noSession } from "../errors/NoSession";
-import { hasSession } from "../utils/hasSession";
+import { getSession } from "../utils/getSession";
 import { average } from "./average";
 import { embedMessage } from '../utils/EmbedMessage';
 
@@ -15,7 +15,7 @@ export type Users = {
 }
 
 export async function finalize(msg: Message): Promise<void> {
-  const session = await hasSession(msg);
+  const session = await getSession(msg);
   
   if (!session || !session.data.started_at) return noSession(msg);
 
