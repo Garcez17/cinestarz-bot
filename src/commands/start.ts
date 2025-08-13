@@ -10,6 +10,7 @@ interface StartSessionProps {
   guildId: string
   user: {
     id: string
+    socketId: string
     username: string
     avatar: string | null
     displayName: string
@@ -50,7 +51,10 @@ export async function startSession({ channel, guildId, user }: StartSessionProps
     startedAt: new Date(),
     status: "VOTING",
     content: null,
-    host: user.id,
+    host: {
+      userId: user.id,
+      socketId: user.socketId,
+    },
     participants: [{
       id: user.id,
       username: user.username,

@@ -23,6 +23,9 @@ import { userCurrentTime } from "./socket/user-current-time";
 import { userRateChange } from "./socket/user-rate-change";
 import { createParty } from "./socket/create-party";
 import { requestPause } from "./socket/interactions/requests/req-pause";
+import { requestPlay } from "./socket/interactions/requests/req-play";
+import { votePlay } from "./socket/interactions/responses/vote-play";
+import { votePause } from "./socket/interactions/responses/vote-pause";
 
 const client = new Client({
   intents: [
@@ -173,6 +176,12 @@ io.on('connection', socket => {
   createParty(socket, client)
 
   requestPause(socket)
+
+  requestPlay(socket)
+
+  votePause(socket)
+
+  votePlay(socket)
 
   socket.on('disconnect', (data) => {
     console.log('desconectado =>', data)

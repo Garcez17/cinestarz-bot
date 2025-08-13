@@ -38,7 +38,7 @@ export async function enterParty(socket: Socket) {
       id: user.id,
     }
 
-    const isHost = participants.find((participant: any) => participant.id === user.id).id === session.host
+    const isHost = participants.find((participant: any) => participant.socketId === socket.id).socketId === session.host.socketId
 
     const cached = partyCache.get(partyId)
 

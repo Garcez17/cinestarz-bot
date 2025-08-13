@@ -18,26 +18,30 @@ export async function requestPause(socket: Socket) {
       socketId: socket.id,
       globalName: user?.globalName,
       id: user.id,
+      confirm: true
     }
+
+    console.log(`user requested pause =>`, userData)
 
     activeVotes.set(partyId, {
       action: 'pause',
       requestedBy: userData,
-      votes: new Map()
+      votes: new Map([[userData.id, userData]])
     });
 
-    setTimeout(() => {
-      activeVotes.delete(partyId);
-      console.log('votação encerrada')
-    }, 45000); // 15s
+    // setTimeout(() => {
+    //   activeVotes.delete(partyId);
+    //   console.log('votação encerrada')
+    // }, 45000); // 15s
 
     console.log(`Votação de pause criada para sala ${session.collectionName}`);
 
-    socket.broadcast.to(session.collectionName)
+    socket.nsp.to(session.collectionName)
       .emit(SOCKET_EVENTS.RES.PAUSE, {
         action: 'pause',
         requestedBy: userData,
-        votes: []
+        votes: [userData],
+        participantsLength: session?.participants.length + 1, // + 1 ONLY FOR TESTS
       });
   });
 }

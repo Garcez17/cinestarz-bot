@@ -7,27 +7,46 @@ export async function votePause(socket: Socket) {
   socket.on(SOCKET_EVENTS.VOTE.PAUSE, async (data) => {
     const { partyId, user, confirm } = data;
 
+    console.log('vote for pause =>', { user, socket: socket.id })
+
     const party = await getActiveParty({ partyId });
     if (!party) return;
 
     const session = party.data();
 
     const voteSession = activeVotes.get(partyId);
-    if (!voteSession || voteSession.action !== "pause") return;
+    if (!voteSession || voteSession.action !== "pause") {
+      console.log('[PAUSE] VOTING NOT FOUND')
+      return
+    }
 
-    voteSession.votes.set(user.id, { ...user, confirm });
+    voteSession.votes.set(socket.id, { // SOCKET JUST FOR TESTS
+      name: user?.username,
+      avatarUrl: user.avatar,
+      socketId: socket.id,
+      globalName: user?.globalName,
+      id: user.id,
+      confirm: true
+     });
 
-    socket.to(session.collectionName).emit(SOCKET_EVENTS.RES.PAUSE, {
+    socket.nsp.to(session.collectionName).emit(SOCKET_EVENTS.RES.PAUSE, {
       action: "pause",
       requestedBy: voteSession.requestedBy,
-      votes: Array.from(voteSession.votes.values())
-    });
+      votes: Array.from(voteSession.votes.values()),
+      participantsLength: session?.participants.length + 1,
+    })
 
-    const totalMembers = session.members.length;
-    const yesVotes = Array.from(voteSession.votes.values()).filter(v => v.confirm).length;
+    const totalMembers = session.participants.length
+    const yesVotes = Array.from(voteSession.votes.values()).filter(v => v.confirm).length
+
+    console.log('SEND SOCKET EVENT VOTE =>', {
+      yesVotes,
+      needToAccept: totalMembers / 2
+    })
 
     if (yesVotes > totalMembers / 2) {
-      socket.to(session.collectionName).emit(SOCKET_EVENTS.EVT.PAUSE)
+      console.log('SEND PAUSE EVENT')
+      socket.nsp.to(session.collectionName).emit(SOCKET_EVENTS.EVT.PAUSE)
       activeVotes.delete(partyId)
     }
   });

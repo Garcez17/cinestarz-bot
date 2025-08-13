@@ -8,8 +8,8 @@ export const SOCKET_EVENTS = {
     PLAY: 'play-requested',
   },
   VOTE: {
-    PAUSE: 'pause-requested',
-    PLAY: 'play-requested',
+    PAUSE: 'vote-pause',
+    PLAY: 'vote-play',
   },
   EVT: {
     PAUSE: 'pause',

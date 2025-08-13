@@ -25,6 +25,7 @@ export async function createParty(socket: Socket, client: Client) {
           guildId: guild.id,
           user: {
             avatar: member.avatar,
+            socketId: socket.id,
             displayName: member.displayName,
             id: member.id,
             username: member.user.username
