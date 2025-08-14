@@ -7,6 +7,12 @@ export async function requestPause(socket: Socket) {
   socket.on(SOCKET_EVENTS.REQ.PAUSE, async (data) => {
     const { partyId, user } = data
 
+    const voteSession = activeVotes.get(partyId)
+
+    if (voteSession && voteSession?.requestedBy.id === user.id) {
+      return
+    }
+
     const party = await getActiveParty({ partyId });
     if (!party) return;
 
@@ -29,10 +35,10 @@ export async function requestPause(socket: Socket) {
       votes: new Map([[userData.id, userData]])
     });
 
-    // setTimeout(() => {
-    //   activeVotes.delete(partyId);
-    //   console.log('votação encerrada')
-    // }, 45000); // 15s
+    setTimeout(() => {
+      activeVotes.delete(partyId);
+      console.log('votação encerrada')
+    }, 15000); // 15s
 
     console.log(`Votação de pause criada para sala ${session.collectionName}`);
 
