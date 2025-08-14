@@ -3,9 +3,9 @@ import { SOCKET_EVENTS } from "../../../@types/constants";
 import { getActiveParty } from "../../../utils/getActiveParty";
 import { activeVotes } from "..";
 
-export async function requestPause(socket: Socket) {
-  socket.on(SOCKET_EVENTS.REQ.PAUSE, async (data) => {
-    const { partyId, user } = data
+export async function requestSeek(socket: Socket) {
+  socket.on(SOCKET_EVENTS.REQ.SEEK, async (data) => {
+    const { partyId, user, seconds } = data
 
     const voteSession = activeVotes.get(partyId)
 
@@ -17,7 +17,7 @@ export async function requestPause(socket: Socket) {
 
     if (!party) return
 
-    const session = party.data()
+    const session = party.data();
 
     const userData = {
       name: user?.username,
@@ -28,12 +28,15 @@ export async function requestPause(socket: Socket) {
       confirm: true
     }
 
-    console.log(`user requested pause =>`, userData)
+    console.log(`user requested seek =>`, userData)
+
+    console.log('SECONDS =>', seconds)
 
     activeVotes.set(partyId, {
-      action: 'pause',
+      action: 'seek',
       requestedBy: userData,
-      votes: new Map([[userData.id, userData]])
+      votes: new Map([[userData.id, userData]]),
+      time: seconds,
     })
 
     setTimeout(() => {
@@ -41,14 +44,15 @@ export async function requestPause(socket: Socket) {
       console.log('votação encerrada')
     }, 15000) // 15s
 
-    console.log(`Votação de pause criada para sala ${session.collectionName}`)
+    console.log(`Votação de seek criada para sala ${session.collectionName}`)
 
     socket.nsp.to(session.collectionName)
-      .emit(SOCKET_EVENTS.RES.PAUSE, {
-        action: 'pause',
+      .emit(SOCKET_EVENTS.RES.SEEK, {
+        action: 'seek',
         requestedBy: userData,
         votes: [userData],
         participantsLength: session?.participants.length + 1, // + 1 ONLY FOR TESTS
+        seconds: seconds,
       })
   })
 }

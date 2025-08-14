@@ -26,6 +26,10 @@ import { requestPause } from "./socket/interactions/requests/req-pause";
 import { requestPlay } from "./socket/interactions/requests/req-play";
 import { votePlay } from "./socket/interactions/responses/vote-play";
 import { votePause } from "./socket/interactions/responses/vote-pause";
+import { requestSeek } from "./socket/interactions/requests/req-seek";
+import { requestChangeRate } from "./socket/interactions/requests/req-change-rate";
+import { voteSeek } from "./socket/interactions/responses/vote-seek";
+import { voteChangeRate } from "./socket/interactions/responses/vote-change-rate";
 
 const client = new Client({
   intents: [
@@ -179,9 +183,17 @@ io.on('connection', socket => {
 
   requestPlay(socket)
 
+  requestSeek(socket)
+
+  requestChangeRate(socket)
+
   votePause(socket)
 
   votePlay(socket)
+
+  voteSeek(socket)
+
+  voteChangeRate(socket)
 
   socket.on('disconnect', (data) => {
     console.log('desconectado =>', data)
