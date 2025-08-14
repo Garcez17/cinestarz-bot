@@ -1,73 +1,93 @@
-import { format } from "date-fns";
-import { Message } from "discord.js";
-import { fauna } from "../services/fauna";
-import { query as q } from 'faunadb';
-import { Session } from "../@types";
-import { hasSession } from "../utils/hasSession";
+import { EmbedBuilder } from "discord.js"
+import { getSession } from "../utils/getSession"
+import { doc, setDoc } from "firebase/firestore"
+import { firestore } from "../services/firebase"
+import { randomUUID } from "node:crypto"
+import type { DiscordChannel } from "../@types"
 
-export async function startSession(msg: Message): Promise<void> {
-  const session = await hasSession(msg, true);
+interface StartSessionProps {
+  channel: DiscordChannel
+  guildId: string
+  user: {
+    id: string
+    socketId: string
+    username: string
+    avatar: string | null
+    displayName: string
+  }
+}
 
-  if (session?.data.started_at) return;
+export async function startSession({ channel, guildId, user }: StartSessionProps): Promise<'OK' | 'SESSION_ALREADY_EXISTS'> {
+  const { session: findExistentSession } = await getSession({
+    channel,
+    guildId,
+  })
 
-  const createSession = await fauna.query<Session>(
-    q.If(
-      q.Not(
-        q.Exists(
-          q.Match(
-            q.Index('session_by_server_id'),
-            q.Casefold(msg.channel.id)
-          )
-        )
-      ),
-      q.Create(
-        q.Collection('sessions'),
-        {
-          data: {
-            server_id: msg.channel.id,
-            started_at: String(new Date),
-            session_number: 1,
-            room: [],
-            indications: [],
-            raffle_film: {
-              notes: [],
-            }
-          }
-        }
-      ),
-      q.Let(
-        {
-          doc: q.Get(q.Match(q.Index("session_by_server_id"), msg.channel.id)),
-        },
-        q.Update(
-          q.Select(["ref"], q.Var('doc')),
-          {
-            data: {
-              started_at: String(new Date),
-            }
-          }
-        )
-      )
-    )
-  )
+  if (findExistentSession) {
+    if (findExistentSession.content?.contentId) {
+      const embed = new EmbedBuilder()
+        .setColor(0x3498db)
+        .setTitle('🎬 Existe uma sessão em andamento, finalize essa para iniciar outra!')
+        .setTimestamp()
 
-  const date = new Date(createSession.data.started_at);
+      await channel.send({
+        embeds: [embed],
+        components: [],
+      })
 
-  msg.channel.send({
-    embed: {
-      color: 3447003,
-      title: `Cinestarz Sessão Nº ${createSession.data.session_number} - ${format(date, 'dd/MM')}`,
-      description: 'A sessão está iniciada!!!!!!',
-      fields: [
-        {
-          name: "15 minutos para indicarem!",
-          value: 'Após isso as indicações são encerradas.',
-        },
-      ],
-      footer: {
-        text: 'Bom filme!😀'
-      },
-      timestamp: new Date(),
+      return 'SESSION_ALREADY_EXISTS'
+    }
+
+    return 'OK'
+  }
+
+  const collectionName = channel.id + randomUUID()
+
+  const document = doc(firestore, `guilds/${guildId}/sessions/${collectionName}`)
+
+  const session = {
+    collectionName,
+    channelId: channel.id,
+    startedAt: new Date(),
+    status: "VOTING",
+    content: null,
+    host: {
+      userId: user.id,
+      socketId: user.socketId,
     },
-  });
+    participants: [{
+      id: user.id,
+      username: user.username,
+      avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
+      nickname: user?.displayName,
+    }],
+    createdBy: {
+      id: user.id,
+      username: user.username,
+    },
+    suggestions: [],
+    votes: {}
+  }
+
+  await setDoc(document, session)
+
+  const embed = new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle('🎬 Sessão Iniciada!')
+    .setDescription('A sessão está iniciada, prepare a pipoca!')
+    .addFields([
+      {
+        name: '⏱️ 15 minutos para indicarem',
+        value: 'Após isso as indicações são encerradas.',
+      },
+    ])
+    .setFooter({ text: 'Bom filme! 🍿' })
+    .setTimestamp()
+
+  await channel.send({
+    embeds: [embed],
+    components: [],
+  })
+
+  return 'OK'
 }

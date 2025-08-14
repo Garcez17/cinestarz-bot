@@ -1,6 +1,11 @@
 import { Message } from "discord.js";
 import { embedMessage } from "../utils/EmbedMessage";
+import type { DiscordChannel } from "../@types";
 
-export function noSession(msg: Message): void {
-  embedMessage('Não há sessão em andamento.', msg, 160000);
+interface NoSessionProps {
+  channel: DiscordChannel
+}
+
+export function noSession({ channel }: NoSessionProps): void {
+  embedMessage('Não há sessão em andamento.', channel, 160000);
 }

@@ -1,10 +1,10 @@
 import { Message } from "discord.js";
 import { noSession } from "../errors/NoSession";
 import { embedMessage } from "../utils/EmbedMessage";
-import { hasSession } from "../utils/hasSession";
+import { getSession } from "../utils/getSession";
 
 export async function showRoom(msg: Message) {
-  const session = await hasSession(msg);
+  const session = await getSession(msg);
   
   if (!session || !session.data.started_at) return noSession(msg);
 

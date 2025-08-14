@@ -1,3 +1,6 @@
+import type { DMChannel, NewsChannel, PartialDMChannel, PrivateThreadChannel, PublicThreadChannel, StageChannel, TextChannel, VoiceChannel } from "discord.js";
+import { Timestamp } from "firebase/firestore";
+
 export type Indication = {
   username: string;
   indicate: string;
@@ -27,11 +30,48 @@ type SessionData = {
   }
 }
 
-export type Session = {
-  ref: {
-    id: string;
-  };
-  data: SessionData;
+export type DiscordChannel = 
+  DMChannel 
+  | PartialDMChannel 
+  | NewsChannel 
+  | StageChannel 
+  | TextChannel 
+  | PublicThreadChannel<boolean> 
+  | PrivateThreadChannel 
+  | VoiceChannel
+
+export type SessionStatus = "OPEN" | "VOTING" | "CLOSED";
+
+export interface Participant {
+  id: string;
+  username: string;
+  avatar: string;
+  nickname: string;
+}
+
+export interface Suggestion {
+  userId: string
+  content: string
+  rawTitle: string
+}
+
+interface Content {
+  title: string
+  partyUrl: string
+  provider: string
+  contentId: string
+  status: string
+}
+
+export interface Session {
+  content: Content | null
+  status: SessionStatus
+  channelId: string
+  collectionName: string
+  createdBy: Participant
+  participants: Participant[]
+  startedAt: Timestamp
+  suggestions: Suggestion[]
 }
 
 export type FindOneSession = {
