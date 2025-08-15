@@ -14,12 +14,10 @@ import { showRoom } from './commands/room';
 import { finalize } from './commands/finalize';
 import { stop } from './commands/stop';
 import { party } from "./commands/party";
-import { enterParty } from "./socket/enter-party";
 import { getParty } from "./socket/getParty";
 import { pause } from "./socket/pause";
 import { play } from "./socket/play";
 import { userManualSeek } from "./socket/user-manual-seek";
-import { userCurrentTime } from "./socket/user-current-time";
 import { userRateChange } from "./socket/user-rate-change";
 import { createParty } from "./socket/create-party";
 import { requestPause } from "./socket/interactions/requests/req-pause";
@@ -30,6 +28,8 @@ import { requestSeek } from "./socket/interactions/requests/req-seek";
 import { requestChangeRate } from "./socket/interactions/requests/req-change-rate";
 import { voteSeek } from "./socket/interactions/responses/vote-seek";
 import { voteChangeRate } from "./socket/interactions/responses/vote-change-rate";
+import { hostCurrentTime } from "./socket/host-current-time";
+import { joinParty } from "./socket/join-party";
 
 const client = new Client({
   intents: [
@@ -164,7 +164,7 @@ export const io = new Server(8080, {
 
 io.on('connection', socket => {
   console.log('connection =>', socket.id)
-  enterParty(socket)
+  joinParty(socket)
 
   getParty(socket)
 
@@ -174,7 +174,7 @@ io.on('connection', socket => {
 
   userManualSeek(socket)
 
-  userCurrentTime(socket)
+  hostCurrentTime(socket)
 
   userRateChange(socket)
 

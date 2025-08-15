@@ -27,6 +27,7 @@ export const SOCKET_EVENTS = {
     JOIN_PARTY: 'join-party',
     CREATE_PARTY: 'create-party',
     NEW_USER: 'new-user',
-    CURRENT_RATE: 'current-rate'
+    CURRENT_RATE: 'current-rate',
+    RESYNC: 'resync',
   },
 }

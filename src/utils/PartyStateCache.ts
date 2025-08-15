@@ -1,20 +1,22 @@
 type PartyData = {
   currentTime: number
   currentRate: number
-  runAt: number
+  paused: boolean
+  runAt: number // timestamp enviado pelo host, em ms
 }
 
 class PartyStateCache {
   private cache = new Map<string, { data: PartyData; lastUpdated: number }>()
-  private ttl = 15 * 60_000 
+  private ttl = 60_000 // 1 minuto
 
   constructor() {
-    setInterval(() => this.cleanup(), 5 * 60_000)
+    setInterval(() => this.cleanup(), 30_000)
   }
 
   set(partyId: string, data: PartyData) {
+    // Armazena exatamente o que vem do front
     this.cache.set(partyId, {
-      data,
+      data: { ...data },
       lastUpdated: Date.now(),
     })
   }
@@ -29,7 +31,8 @@ class PartyStateCache {
       return null
     }
 
-    return entry.data
+    // Retorna os dados crus, sem alterar currentTime
+    return { ...entry.data }
   }
 
   cleanup() {

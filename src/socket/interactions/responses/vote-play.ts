@@ -2,6 +2,7 @@ import type { Socket } from "socket.io";
 import { activeVotes } from "..";
 import { SOCKET_EVENTS } from "../../../@types/constants";
 import { getActiveParty } from "../../../utils/getActiveParty";
+import { partyCache } from "../../../utils/PartyStateCache";
 
 export async function votePlay(socket: Socket) {
   socket.on(SOCKET_EVENTS.VOTE.PLAY, async (data) => {
@@ -10,11 +11,11 @@ export async function votePlay(socket: Socket) {
     console.log('vote for play =>', { user, socket: socket.id })
 
     const party = await getActiveParty({ partyId })
-    if (!party) return;
+    if (!party) return
 
     const session = party.data()
 
-    const voteSession = activeVotes.get(partyId)
+    const voteSession = activeVotes.get(partyId);
     if (!voteSession || voteSession.action !== "play") {
       console.log('[PLAY] VOTING NOT FOUND')
       return
@@ -26,28 +27,45 @@ export async function votePlay(socket: Socket) {
       socketId: socket.id,
       globalName: user?.globalName,
       id: user.id,
-      confirm: true
-     });
+      confirm: true,
+    })
 
     socket.nsp.to(session.collectionName).emit(SOCKET_EVENTS.RES.PLAY, {
       action: "play",
       requestedBy: voteSession.requestedBy,
       votes: Array.from(voteSession.votes.values()),
       participantsLength: session?.participants.length,
-    });
+    })
 
     const totalMembers = session.participants.length
     const yesVotes = Array.from(voteSession.votes.values()).filter(v => v.confirm).length
 
     console.log('[PLAY] SEND SOCKET EVENT VOTE =>', {
       yesVotes,
-      needToAccept: totalMembers / 2
+      needToAccept: totalMembers / 2,
     })
 
     if (yesVotes > totalMembers / 2) {
-      console.log('SEND PLAY EVENT')
-      socket.nsp.to(session.collectionName).emit(SOCKET_EVENTS.EVT.PLAY)
-      activeVotes.delete(partyId)
+      console.log('SEND PLAY EVENT');
+
+      const cached = partyCache.get(partyId);
+      const payload = cached
+        ? {
+            currentTime: cached.currentTime,
+            currentRate: cached.currentRate,
+            paused: false,
+            runAt: cached.runAt,
+          }
+        : {
+            currentTime: 0,
+            currentRate: 1,
+            paused: false,
+            runAt: Date.now(),
+          };
+
+      socket.nsp.to(session.collectionName).emit(SOCKET_EVENTS.EVT.PLAY, payload);
+
+      activeVotes.delete(partyId);
     }
   });
 }

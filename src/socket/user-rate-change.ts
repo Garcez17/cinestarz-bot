@@ -5,7 +5,7 @@ import { SOCKET_EVENTS } from "../@types/constants"
 
 export async function userRateChange(socket: Socket) {
   socket.on(SOCKET_EVENTS.EVT.RATE_CHANGE, async (data) => {
-    const { partyId, currentRate, runAt, currentTime } = data
+    const { partyId, currentRate, runAt, currentTime, isPaused } = data
 
     const party = await getActiveParty({
       partyId,
@@ -19,7 +19,12 @@ export async function userRateChange(socket: Socket) {
 
     if (session.host.userId !== user?.id) return
 
-    partyCache.set(partyId, { currentRate, runAt, currentTime })
+    partyCache.set(partyId, { 
+      currentRate,
+      runAt,
+      currentTime,
+      paused: isPaused,
+    })
 
     console.log('user change video speed =>', {
       socketId: socket.id,

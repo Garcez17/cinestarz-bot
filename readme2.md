@@ -52,5 +52,5 @@
 [] - melhorar os embeds baseados se são filmes/transmissões
 [] - logo da extensão não aparece/pequena
 [] - quando um user entra na sessão ele ou não esta instantaneamente sincronizado ou não esta no estado correto (play/pause)
-[] - padronizar os nomes dos eventos (MAISCULO_COM_UNDERLINE)
+[x] - padronizar os nomes dos eventos (MAISCULO_COM_UNDERLINE)
 [] - troca de host
