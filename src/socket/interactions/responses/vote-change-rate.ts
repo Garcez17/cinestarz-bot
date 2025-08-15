@@ -20,7 +20,7 @@ export async function voteChangeRate(socket: Socket) {
       return
     }
 
-    voteSession.votes.set(socket.id, { // SOCKET JUST FOR TESTS
+    voteSession.votes.set(user.id, {
       name: user?.username,
       avatarUrl: user.avatar,
       socketId: socket.id,
@@ -33,7 +33,7 @@ export async function voteChangeRate(socket: Socket) {
       action: "changerate",
       requestedBy: voteSession.requestedBy,
       votes: Array.from(voteSession.votes.values()),
-      participantsLength: session?.participants.length + 1,
+      participantsLength: session?.participants.length,
     })
 
     const totalMembers = session.participants.length

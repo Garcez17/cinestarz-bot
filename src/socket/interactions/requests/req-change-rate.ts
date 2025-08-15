@@ -49,7 +49,7 @@ export async function requestChangeRate(socket: Socket) {
         action: 'changerate',
         requestedBy: userData,
         votes: [userData],
-        participantsLength: session?.participants.length + 1, // + 1 ONLY FOR TESTS
+        participantsLength: session?.participants.length,
       })
   })
 }

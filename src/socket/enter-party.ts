@@ -18,18 +18,6 @@ export async function enterParty(socket: Socket) {
 
     socket.join(session.collectionName)
 
-    const participants = session.participants.map((participant: any) => participant.id === user.id ? ({
-      ...participant,
-      socketId: socket.id,
-    }) : participant)
-
-    updateDoc(party.ref, { participants })
-
-    console.log('NEW USER =>', {
-      user,
-      socket: socket.id,
-    })
-
     const userData = {
       name: user?.username,
       avatarUrl: user.avatar,
@@ -38,7 +26,27 @@ export async function enterParty(socket: Socket) {
       id: user.id,
     }
 
-    const isHost = participants.find((participant: any) => participant.socketId === socket.id).socketId === session.host.socketId
+    let participants = [...session.participants];
+
+    const existingIndex = participants.findIndex((p: any) => p.id === user.id);
+
+    if (existingIndex >= 0) {
+      participants[existingIndex] = {
+        ...participants[existingIndex],
+        socketId: socket.id,
+      };
+    } else {
+      participants.push(userData);
+    }
+
+    await updateDoc(party.ref, { participants });
+
+    console.log('NEW USER =>', {
+      user,
+      socket: socket.id,
+    })
+
+    const isHost = participants.find((participant: any) => participant?.id === user.id)?.id === session.host.userId
 
     const cached = partyCache.get(partyId)
 

@@ -39,7 +39,7 @@ export async function requestPlay(socket: Socket) {
     setTimeout(() => {
       activeVotes.delete(partyId)
       console.log('votação encerrada')
-    }, 15000) // 15s
+    }, 45000) // 45s
 
     console.log(`Votação de play criada para sala ${session.collectionName}`)
 
@@ -48,7 +48,7 @@ export async function requestPlay(socket: Socket) {
         action: 'play',
         requestedBy: userData,
         votes: [userData],
-        participantsLength: session?.participants.length + 1, // + 1 ONLY FOR TESTS
+        participantsLength: session?.participants.length,
       })
   })
 }

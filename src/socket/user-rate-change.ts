@@ -17,7 +17,7 @@ export async function userRateChange(socket: Socket) {
 
     const user = session.participants.find((participant: any) => participant.socketId === socket.id)
 
-    if (session.host !== user?.id) return
+    if (session.host.userId !== user?.id) return
 
     partyCache.set(partyId, { currentRate, runAt, currentTime })
 

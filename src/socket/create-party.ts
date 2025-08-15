@@ -11,62 +11,69 @@ export async function createParty(socket: Socket, client: Client) {
   socket.on(SOCKET_EVENTS.EVT.CREATE_PARTY, async (data, cb) => {
     const { userId, content } = data
 
-    const guilds = client.guilds.cache
+    for (const [, guild] of client.guilds.cache) {
+      let member
 
-    for (const [_, guild] of guilds) {
-      const member = await guild.members.fetch(userId)
+      try {
+        member = await guild.members.fetch(userId)
+      } catch (error: any) {
+        if (error.code === 10007) {
+          continue
+        }
+        throw error
+      }
+
       if (!member) continue
 
       const voiceChannel = member.voice.channel
+      if (!voiceChannel) continue
 
-      if (voiceChannel) {
-        const sessionStatus = await startSession({
-          channel: voiceChannel,
-          guildId: guild.id,
-          user: {
-            avatar: member.avatar,
-            socketId: socket.id,
-            displayName: member.displayName,
-            id: member.id,
-            username: member.user.username
-          }
-        })
-
-        if (sessionStatus === 'SESSION_ALREADY_EXISTS') {
-          return
+      const sessionStatus = await startSession({
+        channel: voiceChannel,
+        guildId: guild.id,
+        user: {
+          avatar: member.avatar,
+          socketId: socket.id,
+          displayName: member.displayName,
+          id: member.id,
+          username: member.user.username
         }
+      })
 
-        const { ref, session } = await getSession({
-          channel: voiceChannel,
-          guildId: guild.id,
-        })
-
-        if (!ref) return
-
-        await getFilmDetails({
-          channel: voiceChannel,
-          providerContent: content.provider,
-          suggestion: {
-            content: normalizeTitle(content.title),
-            rawTitle: content.title,
-            userId: member.id,
-          },
-          ref,
-        })
-
-        await generateParty({
-          authorId: member.id,
-          channel: voiceChannel,
-          collectionName: session!.collectionName,
-          link: content.url,
-          content,
-          ref,
-          session: session!,
-        })
-
-        cb({ session })
-        break
+      if (sessionStatus === "SESSION_ALREADY_EXISTS") {
+        return
       }
+
+      const { ref, session } = await getSession({
+        channel: voiceChannel,
+        guildId: guild.id
+      })
+
+      if (!ref) return
+
+      await getFilmDetails({
+        channel: voiceChannel,
+        providerContent: content.provider,
+        suggestion: {
+          content: normalizeTitle(content.title),
+          rawTitle: content.title,
+          userId: member.id
+        },
+        ref
+      })
+
+      await generateParty({
+        authorId: member.id,
+        channel: voiceChannel,
+        collectionName: session!.collectionName,
+        link: content.url,
+        content,
+        ref,
+        session: session!
+      })
+
+      cb({ session });
+      break
     }
   })
 }

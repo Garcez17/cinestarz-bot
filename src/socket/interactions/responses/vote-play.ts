@@ -9,18 +9,18 @@ export async function votePlay(socket: Socket) {
 
     console.log('vote for play =>', { user, socket: socket.id })
 
-    const party = await getActiveParty({ partyId });
+    const party = await getActiveParty({ partyId })
     if (!party) return;
 
-    const session = party.data();
+    const session = party.data()
 
-    const voteSession = activeVotes.get(partyId);
+    const voteSession = activeVotes.get(partyId)
     if (!voteSession || voteSession.action !== "play") {
       console.log('[PLAY] VOTING NOT FOUND')
       return
     }
 
-    voteSession.votes.set(socket.id, { // SOCKET JUST FOR TESTS
+    voteSession.votes.set(user.id, {
       name: user?.username,
       avatarUrl: user.avatar,
       socketId: socket.id,
@@ -33,7 +33,7 @@ export async function votePlay(socket: Socket) {
       action: "play",
       requestedBy: voteSession.requestedBy,
       votes: Array.from(voteSession.votes.values()),
-      participantsLength: session?.participants.length + 1,
+      participantsLength: session?.participants.length,
     });
 
     const totalMembers = session.participants.length
